@@ -1,0 +1,186 @@
+{
+  "name": "Medical Bot Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "aef9065c-7709-4b58-8273-7df3ba7c28ea",
+      "name": "When chat message received",
+      "webhookId": "a382f879-cdd0-4e26-8ea0-847e3b1b7c35"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst searchName =$('When chat message received').first().json.chatInput;\n\nconst allDoctors = items.map(item => item.json);\n\nconst match = allDoctors.find(doc => \n  doc.name.toLowerCase().trim() === searchName.toLowerCase().trim()\n);\n\n\nif (match) {\n  return { json: match };\n} else {\n  return { json: { error: \"Doctor not found\", searchedFor: searchName } };\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "c7d0035b-2a27-4c31-8c52-2da97a2af9c9",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "url": "https://69e9bf6415c7e2d51268a9d5.mockapi.io/doctors",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        0
+      ],
+      "id": "7394570e-fa1d-4b65-a2c3-199ce541c8b4",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a Pharma Sales Intelligence Agent. Your job is to extract doctor data and generate a high-converting sales pitch.\n\nInput Data to Use:\n\nDoctor Name: {{ $json.name }}\n\nSpecialization: {{ $json.specialization }}\n\nPrescription History: {{ $json.past_prescriptions }}\n\nYour Response Format:\n\nAnalysis: Briefly state the doctor's specialization and how their history with {{ $json.past_prescriptions }} makes them a good lead.\n\nThe Pitch: Write a 2-3 sentence personalized pitch that mentions their specific specialty.\n\nCall to Action: Suggest one specific 'next step' for the sales rep.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        672,
+        0
+      ],
+      "id": "4e4ab6e1-9788-40e6-ad90-2900996e72bb",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        640,
+        224
+      ],
+      "id": "221d7473-e2eb-482c-a3b5-307bf834304d",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "ADluOHDk4YHdM0AE",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        816,
+        224
+      ],
+      "id": "6ff50cfa-6797-41aa-9024-e5cb2b02deff",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "const phrase =$input.first().json.output ;\n\nconst cleanText = phrase.replace(/\\n\\n/g, \" \").trim();\n\nreturn {\n  text: cleanText\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        -32
+      ],
+      "id": "a849b85f-143c-48a0-8592-70a6f0f83bea",
+      "name": "Code in JavaScript1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "6521259d-e249-4318-b38e-0750fc17ff17",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2564e645ecac5634c4bd54b86fdc3b88031ef4d3491301b4981af535f0b9e48b"
+  },
+  "id": "3KZJr044nzmI5YyR",
+  "tags": []
+}
